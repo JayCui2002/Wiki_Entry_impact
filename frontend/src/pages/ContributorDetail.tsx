@@ -17,7 +17,9 @@ const ContributorDetail: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchData(`/contributors/${id}`, { include_detailed: true });
+        const data = await fetchData(`/contributors/${id}`, {
+          params: { include_detailed: true },
+        });
         setContributor(data);
       } catch (err) {
         setError('Failed to fetch contributor details.');
@@ -79,4 +81,4 @@ const ContributorDetail: React.FC = () => {
   );
 };
 
-export default ContributorDetail; 
+export default ContributorDetail;
