@@ -320,26 +320,59 @@ async def trigger_impact_calculation(
 async def compare_contributors(
     contributor_ids: str = Query(..., description="Comma-separated contributor IDs"),
     metrics: str = Query("all", description="Metrics to compare (all, impact, activity, quality)"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """
-    Compare multiple contributors based on selected metrics
-    根据选定指标比较多个贡献者
-    """
+    """Compare multiple contributors by selected metrics."""
+
+    metric_map = {
+        "impact": [
+            "additive_contribution_score",
+            "maintenance_contribution_score",
+            "discussion_impact_score",
+            "overall_impact_score",
+        ],
+        "activity": ["total_edits", "total_pages_created", "total_pages_edited"],
+        "quality": ["revert_rate", "quality_score"],
+    }
+
     try:
-        ids = [int(id.strip()) for id in contributor_ids.split(",")]
+        ids = [int(cid.strip()) for cid in contributor_ids.split(",") if cid.strip()]
         if len(ids) < 2 or len(ids) > 5:
             raise HTTPException(400, "Please provide 2 to 5 contributor IDs")
-        
-        # This is a mock implementation. A real one would fetch and format data.
-        return {
-            "message": "Comparison data would be generated here.",
-            "compared_contributors": ids,
-            "metrics_requested": metrics
-        }
-        
+
+        query = select(Contributor).where(Contributor.id.in_(ids))
+        result = await db.execute(query)
+        contributors = result.scalars().all()
+
+        if not contributors:
+            raise HTTPException(404, "Contributors not found")
+
+        data: List[Dict[str, Any]] = []
+        for c in contributors:
+            record: Dict[str, Any] = {
+                "id": c.id,
+                "display_name": c.display_name,
+                "wikipedia_username": c.wikipedia_username,
+            }
+
+            if metrics == "all":
+                selected_metrics = metric_map["impact"] + metric_map["activity"] + metric_map["quality"]
+            else:
+                if metrics not in metric_map:
+                    raise HTTPException(400, "Invalid metrics selection")
+                selected_metrics = metric_map[metrics]
+
+            for field in selected_metrics:
+                record[field] = getattr(c, field)
+
+            data.append(record)
+
+        return {"contributors": data}
+
     except ValueError:
         raise HTTPException(400, "Invalid contributor IDs provided")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error comparing contributors: {e}")
-        raise HTTPException(500, "Internal server error")
+        raise HTTPException(500, "Internal server error"
