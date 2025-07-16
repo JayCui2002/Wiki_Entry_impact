@@ -1,0 +1,16 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+sqlalchemy[asyncio]>=2.0.29
+alembic>=1.13.1
+psycopg2-binary; python_version < '3.12'
+psycopg2; python_version >= '3.12'
+python-dotenv>=1.0.1
+redis>=5.0.4
+pandas>=2.1.4
+scikit-learn>=1.4.2
+nltk>=3.8.1
+pydantic-settings>=2.2.1
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.9
+asyncpg>=0.29.0
