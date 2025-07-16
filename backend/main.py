@@ -63,26 +63,30 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI application
 app = FastAPI(
-    title="Wiki Entry Impact Assessment API",
-    description="A computational model for assessing contributor impact on wiki entry formation",
+    title=settings.PROJECT_NAME,
+    description="API for Wiki Entry Impact Assessment",
     version="1.0.0",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT == "development" else None,
     lifespan=lifespan
 )
 
+# Set up CORS middleware
+# This allows the frontend (running on a different port) to communicate with the backend.
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 # Add middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 if settings.REDIS_ENABLED:
     app.add_middleware(RateLimitMiddleware)
-app.add_middleware(SecurityMiddleware)
+# app.add_middleware(SecurityMiddleware) # Temporarily disabled for debugging CORS issues
 app.add_middleware(LoggingMiddleware)
 
 

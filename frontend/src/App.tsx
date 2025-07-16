@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Container } from '@mui/material';
+import { CssBaseline, Container, Box, Toolbar } from '@mui/material';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +10,8 @@ import ContributorDetail from './pages/ContributorDetail';
 import Analytics from './pages/Analytics';
 import Comparison from './pages/Comparison';
 import Settings from './pages/Settings';
+import WikiAnalysis from './pages/WikiAnalysis';
+import AnalysisHistory from './pages/AnalysisHistory';
 import { ApiProvider } from './contexts/ApiContext';
 
 // Create Material-UI theme with custom colors
@@ -66,22 +68,26 @@ const App: React.FC = () => {
       <CssBaseline />
       <ApiProvider>
         <Router>
-          <div style={{ display: 'flex', minHeight: '100vh' }}>
+          <Box sx={{ display: 'flex' }}>
+            <Header />
             <Sidebar />
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              <Header />
-              <Container maxWidth="xl" sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/contributors" element={<Contributors />} />
-                  <Route path="/contributors/:id" element={<ContributorDetail />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/comparison" element={<Comparison />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </Container>
-            </div>
-          </div>
+            <Box
+              component="main"
+              sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
+            >
+              <Toolbar />
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/contributors" element={<Contributors />} />
+                <Route path="/contributors/:id" element={<ContributorDetail />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/comparison" element={<Comparison />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/wiki-analysis" element={<WikiAnalysis />} />
+                <Route path="/analysis-history" element={<AnalysisHistory />} />
+              </Routes>
+            </Box>
+          </Box>
         </Router>
       </ApiProvider>
     </ThemeProvider>

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
     
     # Basic application settings
-    APP_NAME: str = "Wiki Entry Impact Assessment"
+    PROJECT_NAME: str = "Wiki Entry Impact Assessment"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -48,7 +48,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # CORS settings
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # For development, we allow all origins.
+    # For production, this should be a specific list of frontend URLs.
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]
     
     # Rate limiting
     RATE_LIMIT_REQUESTS: int = 100
@@ -101,7 +103,7 @@ class Settings(BaseSettings):
             self.CELERY_RESULT_BACKEND = self.REDIS_URL  # type: ignore[assignment]
         return self
     
-    @field_validator("ALLOWED_HOSTS", mode='before')
+    @field_validator("BACKEND_CORS_ORIGINS", mode='before')
     def validate_allowed_hosts(cls, v: Any) -> List[str]:
         """
         Validate and process allowed hosts

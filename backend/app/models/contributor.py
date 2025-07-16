@@ -59,6 +59,7 @@ class Contributor(Base):
     # Quality metrics
     reverted_edits_count = Column(Integer, default=0)
     revert_rate = Column(Float, default=0.0)  # Percentage of edits that were reverted
+    quality_score = Column(Float, default=0.0)
     
     # Discussion and collaboration metrics
     talk_page_edits = Column(Integer, default=0)
@@ -92,7 +93,8 @@ class Contributor(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Foreign key relationships
-    system_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    system_user_id = Column(Integer, nullable=True)  # ForeignKey("users.id") removed temporarily
+    analysis_session_id = Column(Integer, nullable=True)  # Which analysis session found this contributor
     
     # Relationships
     # system_user = relationship("User", back_populates="contributor_profile")
@@ -151,18 +153,17 @@ class Contributor(Base):
         self.discussion_impact_score = scores["discussion"]
         self.overall_impact_score = scores["overall"]
     
-    def calculate_revert_rate(self, total_reverted: int = None) -> float:
+    def calculate_revert_rate(self) -> float:
         """
         Calculate the revert rate for this contributor
         计算此贡献者的回退率
         """
-        if total_reverted is not None:
-            self.reverted_edits_count = total_reverted
+        total_reverted = getattr(self, 'reverted_edits_count', 0)
         
-        if self.total_edits == 0:
+        if getattr(self, 'total_edits', 0) == 0:
             return 0.0
         
-        revert_rate = float(getattr(self, 'reverted_edits_count', 0) or 0) / float(getattr(self, 'total_edits', 1) or 1)
+        revert_rate = float(total_reverted or 0) / float(getattr(self, 'total_edits', 1) or 1)
         self.revert_rate = round(revert_rate, 4)
         return self.revert_rate
     
@@ -208,7 +209,7 @@ class Contributor(Base):
             "primary_language": self.primary_language,
             "topic_areas": self.topic_areas,
             "contribution_type_ratio": self.get_contribution_type_ratio(),
-            "last_data_update": self.last_data_update.isoformat() if self.last_data_update else None,
+            "last_data_update": self.last_data_update.isoformat() if self.last_data_update is not None else None,
         }
         
         if include_sensitive:
@@ -216,9 +217,9 @@ class Contributor(Base):
                 "wikipedia_user_id": self.wikipedia_user_id,
                 "user_page_url": self.user_page_url,
                 "talk_page_url": self.talk_page_url,
-                "registration_date": self.registration_date.isoformat() if self.registration_date else None,
-                "first_edit_date": self.first_edit_date.isoformat() if self.first_edit_date else None,
-                "last_edit_date": self.last_edit_date.isoformat() if self.last_edit_date else None,
+                "registration_date": self.registration_date.isoformat() if self.registration_date is not None else None,
+                "first_edit_date": self.first_edit_date.isoformat() if self.first_edit_date is not None else None,
+                "last_edit_date": self.last_edit_date.isoformat() if self.last_edit_date is not None else None,
                 "languages_contributed": self.languages_contributed,
                 "activity_pattern": self.activity_pattern,
                 "frequent_collaborators": self.frequent_collaborators,
@@ -231,11 +232,11 @@ class Contributor(Base):
         Check if contributor data needs updating
         检查贡献者数据是否需要更新
         """
-        if not self.last_data_update:
+        if self.last_data_update is None:
             return True
         
         from datetime import datetime, timedelta
         threshold_date = datetime.now() - timedelta(days=threshold_days)
         # This comparison requires last_data_update to be timezone-aware if threshold_date is.
         # Assuming both are offset-naive or both are offset-aware (which they should be with server_default=func.now())
-        return self.last_data_update < threshold_date 
+        return bool(self.last_data_update < threshold_date) 

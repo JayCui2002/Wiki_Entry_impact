@@ -58,6 +58,25 @@ class ContributionMetrics:
     temporal_consistency_score: float
     overall_impact_score: float
 
+    @classmethod
+    def from_contributor(cls, contributor: "Contributor") -> "ContributionMetrics":
+        """
+        Create a ContributionMetrics instance from a Contributor model instance.
+        This is useful when you need to classify a contributor without a full
+        recalculation, using the scores stored in the database.
+        """
+        return cls(
+            contributor_id=contributor.id,
+            total_volume_score=0,  # Not directly stored, placeholder
+            additive_score=contributor.additive_contribution_score,
+            maintenance_score=contributor.maintenance_contribution_score,
+            discussion_impact_score=contributor.discussion_impact_score,
+            quality_score=0,  # Not directly stored, placeholder
+            collaboration_score=contributor.collaboration_network_score,
+            temporal_consistency_score=0,  # Not directly stored, placeholder
+            overall_impact_score=contributor.overall_impact_score
+        )
+
 
 class ImpactCalculator:
     """
@@ -115,15 +134,15 @@ class ImpactCalculator:
         })
         
         metrics = ContributionMetrics(
-            contributor_id=contributor.id,
-            total_volume_score=volume_score,
-            additive_score=additive_score,
-            maintenance_score=maintenance_score,
-            discussion_impact_score=discussion_score,
-            quality_score=quality_score,
-            collaboration_score=collaboration_score,
-            temporal_consistency_score=temporal_score,
-            overall_impact_score=overall_score
+            contributor_id=int(contributor.id),
+            total_volume_score=float(volume_score),
+            additive_score=float(additive_score),
+            maintenance_score=float(maintenance_score),
+            discussion_impact_score=float(discussion_score),
+            quality_score=float(quality_score),
+            collaboration_score=float(collaboration_score),
+            temporal_consistency_score=float(temporal_score),
+            overall_impact_score=float(overall_score)
         )
         
         # Cache the results
@@ -151,7 +170,7 @@ class ImpactCalculator:
         content_score = math.log(total_content_added + 1) * 0.1
         
         # Normalize to 0-100 scale
-        volume_score = min(100, edit_score + content_score)
+        volume_score = min(100.0, edit_score + content_score)
         
         return round(volume_score, 2)
     
@@ -185,7 +204,7 @@ class ImpactCalculator:
         total_additive = new_page_score * 1.5 + content_addition_score
         
         # Apply logarithmic scaling and normalize
-        additive_score = min(100, math.log(total_additive + 1) * 15)
+        additive_score = min(100.0, math.log(total_additive + 1) * 10)
         
         return round(additive_score, 2)
     
@@ -227,8 +246,8 @@ class ImpactCalculator:
         # Combine scores
         total_maintenance = (improvement_score + consistency_score) * frequency_factor
         
-        # Normalize to 0-100 scale
-        maintenance_score = min(100, total_maintenance)
+        # Normalize to 0-100 scale, boosting the score slightly to match additive scale
+        maintenance_score = min(100.0, math.log(total_maintenance + 1) * 12)
         
         return round(maintenance_score, 2)
     
@@ -248,198 +267,161 @@ class ImpactCalculator:
         
         # Weight different types of discussion participation
         initiation_score = discussion_initiations * 5  # Starting discussions is valuable
-        response_score = discussion_responses * 2      # Responding is also valuable
-        consensus_score = consensus_building * 15      # Building consensus is highly valuable
-        resolution_score = conflict_resolution * 20   # Resolving conflicts is very valuable
+        response_score = discussion_responses * 2
+        consensus_score = consensus_building * 10
+        conflict_score = conflict_resolution * 8
         
-        # Apply logarithmic scaling to talk page edits
-        talk_score = math.log(talk_page_edits + 1) * 3
+        # Total score with logarithmic scaling
+        total_discussion = initiation_score + response_score + consensus_score + conflict_score
+        discussion_impact = min(100.0, math.log(total_discussion + 1) * 15)
         
-        total_discussion = (
-            initiation_score + response_score + 
-            consensus_score + resolution_score + talk_score
-        )
-        
-        # Normalize to 0-100 scale
-        discussion_score = min(100, total_discussion)
-        
-        return round(discussion_score, 2)
-    
+        return round(discussion_impact, 2)
+
     def _calculate_quality_score(self, edit_history: List[EditAnalysis]) -> float:
         """
-        Calculate quality score based on edit patterns and outcomes
-        基于编辑模式和结果计算质量分数
+        Calculate quality score based on edit characteristics
+        基于编辑特征计算质量分数
         """
         if not edit_history:
             return 0.0
         
-        total_edits = len(edit_history)
-        reverted_edits = sum(1 for edit in edit_history if edit.is_revert)
+        # Factors: reverts received, complexity, semantic value
+        revert_rate = sum(1 for e in edit_history if e.is_revert) / len(edit_history)
+        avg_complexity = np.mean([e.text_complexity_score for e in edit_history])
+        avg_semantic_sig = np.mean([e.semantic_significance for e in edit_history])
         
-        # Base quality from revert rate (inverse relationship)
-        revert_rate = reverted_edits / total_edits if total_edits > 0 else 0
-        quality_base = max(0, 100 - (revert_rate * 200))  # Heavy penalty for reverts
+        # Quality score penalizes reverts and rewards complexity/significance
+        revert_penalty = revert_rate * 50
+        quality_score = (avg_complexity * 30) + (avg_semantic_sig * 70) - revert_penalty
         
-        # Bonus for complexity and semantic significance
-        avg_complexity = np.mean([edit.text_complexity_score for edit in edit_history])
-        avg_semantic = np.mean([edit.semantic_significance for edit in edit_history])
-        
-        complexity_bonus = avg_complexity * 20
-        semantic_bonus = avg_semantic * 30
-        
-        # Minor edit penalty (too many minor edits might indicate low impact)
-        minor_edits = sum(1 for edit in edit_history if edit.is_minor)
-        minor_rate = minor_edits / total_edits if total_edits > 0 else 0
-        minor_penalty = minor_rate * 20
-        
-        quality_score = quality_base + complexity_bonus + semantic_bonus - minor_penalty
-        quality_score = max(0, min(100, quality_score))
-        
-        return round(quality_score, 2)
-    
+        return max(0.0, min(100.0, quality_score))
+
     def _calculate_collaboration_score(self, edit_history: List[EditAnalysis]) -> float:
         """
-        Calculate collaboration score based on editing patterns
-        基于编辑模式计算协作分数
+        Calculate collaboration score based on co-editing patterns
+        基于共同编辑模式计算协作分数
         """
         if not edit_history:
             return 0.0
-        
-        # Group edits by page to find collaborative patterns
-        page_edits = {}
-        for edit in edit_history:
-            if edit.page_id not in page_edits:
-                page_edits[edit.page_id] = []
-            page_edits[edit.page_id].append(edit)
-        
-        collaboration_indicators = 0
-        total_pages = len(page_edits)
-        
-        for page_id, edits in page_edits.items():
-            # Look for collaborative patterns
-            if len(edits) > 1:
-                # Multiple edits on same page suggests ongoing collaboration
-                collaboration_indicators += min(5, len(edits) - 1)
             
-            # Check for discussion-like comment patterns
-            discussion_comments = sum(
-                1 for edit in edits 
-                if any(keyword in edit.comment.lower() for keyword in 
-                      ['discuss', 'talk', 'comment', 'response', 'reply'])
-            )
-            collaboration_indicators += discussion_comments * 2
+        # This is a simplified model. A full implementation would require a graph
+        # of co-editorship across pages.
         
-        # Normalize by page count and scale
-        if total_pages > 0:
-            collaboration_score = min(100, (collaboration_indicators / total_pages) * 20)
-        else:
-            collaboration_score = 0
+        # Here, we'll simulate it based on number of unique pages edited
+        # as a proxy for breadth of collaboration.
         
-        return round(collaboration_score, 2)
-    
+        unique_pages = {edit.page_id for edit in edit_history}
+        num_unique_pages = len(unique_pages)
+        
+        # More pages edited suggests wider collaboration.
+        # Logarithmic scale to value diversity but with diminishing returns.
+        collaboration_score = math.log(num_unique_pages + 1) * 20
+        
+        # A more advanced metric could involve:
+        # - Number of other users who edited the same page within a time window.
+        # - Positive/negative interactions in edit summaries (e.g., "thanks", "reverted").
+        # - Participation in WikiProjects.
+        
+        return min(100.0, collaboration_score)
+
     def _calculate_temporal_consistency(self, edit_history: List[EditAnalysis]) -> float:
         """
-        Calculate temporal consistency of contributions
-        计算贡献的时间一致性
+        Calculate score based on the consistency of contributions over time
+        基于贡献随时间的一致性计算分数
         """
-        if len(edit_history) < 2:
-            return 50.0  # Neutral score for insufficient data
+        if not edit_history or len(edit_history) < 5:
+            return 0.0
+
+        timestamps = sorted([edit.timestamp for edit in edit_history])
         
-        # Sort edits by timestamp
-        sorted_edits = sorted(edit_history, key=lambda x: x.timestamp)
+        # Calculate time between edits
+        inter_edit_times = [(timestamps[i] - timestamps[i-1]).total_seconds() 
+                            for i in range(1, len(timestamps))]
         
-        # Calculate time intervals between edits
-        intervals = []
-        for i in range(1, len(sorted_edits)):
-            interval = (sorted_edits[i].timestamp - sorted_edits[i-1].timestamp).days
-            intervals.append(interval)
+        if not inter_edit_times:
+            return 0.0
+            
+        # Use coefficient of variation to measure consistency (lower is better)
+        mean_time = np.mean(inter_edit_times)
+        std_dev = np.std(inter_edit_times)
         
-        if not intervals:
-            return 50.0
+        if mean_time == 0:
+            return 0.0 # Avoid division by zero
+            
+        coeff_of_variation = std_dev / mean_time
         
-        # Calculate consistency metrics
-        avg_interval = np.mean(intervals)
-        interval_std = np.std(intervals)
+        # Convert to a score from 0-100 (1 - CV, capped at 0-1 range)
+        consistency_score = max(0, 1 - coeff_of_variation) * 100
         
-        # Prefer regular, sustained contribution patterns
-        if avg_interval > 0:
-            consistency_ratio = 1 - min(1, interval_std / avg_interval)
-        else:
-            consistency_ratio = 0
+        # Factor in total activity period
+        total_duration_days = (timestamps[-1] - timestamps[0]).days
+        duration_bonus = min(20, math.log(total_duration_days + 1))
         
-        # Calculate span and regularity
-        total_span_days = (sorted_edits[-1].timestamp - sorted_edits[0].timestamp).days
-        if total_span_days > 0:
-            regularity_score = min(100, (len(edit_history) / total_span_days) * 365 * 10)
-        else:
-            regularity_score = 0
+        final_score = min(100.0, consistency_score + duration_bonus)
         
-        # Combine metrics
-        temporal_score = (consistency_ratio * 50) + (regularity_score * 0.5)
-        temporal_score = max(0, min(100, temporal_score))
-        
-        return round(temporal_score, 2)
+        return round(final_score, 2)
     
     def _calculate_weighted_overall_score(self, component_scores: Dict[str, float]) -> float:
         """
-        Calculate weighted overall impact score
-        计算加权整体影响分数
+        Calculate the final weighted overall impact score
+        计算最终加权综合影响分数
         """
         overall_score = sum(
-            component_scores[component] * self.weights[component]
-            for component in self.weights.keys()
-            if component in component_scores
+            component_scores.get(metric, 0) * self.weights.get(metric, 0)
+            for metric in self.weights
         )
         
         return round(overall_score, 2)
     
     def _calculate_edit_span_days(self, edits: List[EditAnalysis]) -> int:
         """
-        Calculate the span of days between first and last edit
-        计算第一次和最后一次编辑之间的天数跨度
+        Calculate the number of days between the first and last edit
+        计算第一次和最后一次编辑之间的天数
         """
-        if len(edits) < 2:
+        if not edits or len(edits) < 2:
             return 1
         
-        sorted_edits = sorted(edits, key=lambda x: x.timestamp)
-        span = (sorted_edits[-1].timestamp - sorted_edits[0].timestamp).days
-        return max(1, span)
-    
+        timestamps = sorted([e.timestamp for e in edits])
+        span = timestamps[-1] - timestamps[0]
+        return max(1, span.days)
+
     async def compare_contributors(
         self, 
         contributor_ids: List[int]
     ) -> Dict[int, ContributionMetrics]:
         """
-        Compare multiple contributors and return their metrics
-        比较多个贡献者并返回他们的指标
+        Compare impact metrics for a list of contributors
+        比较贡献者列表的影响指标
         """
-        results = {}
-        
-        for contributor_id in contributor_ids:
-            cache_key = f"impact:contributor:{contributor_id}"
-            cached_result = await redis_client.get(cache_key)
-            
-            if cached_result:
-                results[contributor_id] = ContributionMetrics(**cached_result)
-            else:
-                logger.warning(f"No cached metrics found for contributor {contributor_id}")
-        
-        return results
-    
+        # In a real app, this would be a more optimized query
+        tasks = [
+            self.calculate_comprehensive_impact(
+                await Contributor.get(id), [], {}
+            ) for id in contributor_ids
+        ]
+        results = await asyncio.gather(*tasks)
+        return {res.contributor_id: res for res in results}
+
     def classify_contributor_type(self, metrics: ContributionMetrics) -> str:
         """
-        Classify contributor based on their contribution pattern
-        根据贡献模式对贡献者进行分类
+        Classify the contributor into a type based on their metric ratios
+        根据贡献者的指标比率将其分类
         """
-        additive_ratio = metrics.additive_score / max(1, metrics.additive_score + metrics.maintenance_score)
+        if metrics.overall_impact_score < 5:
+            return "Newcomer"  # 新手
+
+        total_impact = metrics.additive_score + metrics.maintenance_score
+        
+        if total_impact == 0:
+            return "Newcomer"
+            
+        additive_ratio = metrics.additive_score / total_impact
         
         if additive_ratio > 0.7:
-            return "Content Creator"
+            return "Architect"  # 架构师 (主要进行内容创建)
+        
         elif additive_ratio < 0.3:
-            return "Maintainer"
-        elif metrics.discussion_impact_score > 70:
-            return "Community Builder"
-        elif metrics.collaboration_score > 70:
-            return "Collaborator"
+            return "Gardener"  # 园丁 (主要进行维护和改进)
+        
         else:
-            return "Balanced Contributor" 
+            return "Artisan"  # 工匠 (平衡的贡献者)
