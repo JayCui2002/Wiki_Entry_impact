@@ -3,6 +3,7 @@ import { Box, Typography, Grid, Paper, CircularProgress, Alert } from '@mui/mate
 import PeopleIcon from '@mui/icons-material/People';
 import StarIcon from '@mui/icons-material/Star';
 import { useApi } from '../contexts/ApiContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface StatCardProps {
   title: string;
@@ -27,6 +28,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { fetchData } = useApi();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const getStats = async () => {
@@ -36,7 +38,7 @@ const Dashboard: React.FC = () => {
         const data = await fetchData('/contributors/stats/overview');
         setStats(data);
       } catch (err) {
-        setError('Failed to fetch dashboard stats.');
+        setError(t('dashboard.fetchError') || 'Failed to fetch dashboard stats.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -44,12 +46,13 @@ const Dashboard: React.FC = () => {
     };
 
     getStats();
-  }, [fetchData]);
+  }, [fetchData, t]);
 
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
+        <Typography sx={{ ml: 2 }}>{t('common.loading')}</Typography>
       </Box>
     );
   }
@@ -61,25 +64,31 @@ const Dashboard: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        Dashboard Overview
+        {t('dashboard.title')}
       </Typography>
       {stats && (
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
-              title="Total Contributors"
-              value={stats.total_contributors}
+              title={t('dashboard.totalContributors')}
+              value={stats.total_contributors || 0}
               icon={<PeopleIcon color="primary" sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
-              title="Average Impact Score"
-              value={stats.average_impact_score?.toFixed(2)}
+              title={t('dashboard.averageImpact')}
+              value={stats.average_impact_score?.toFixed(2) || '0.00'}
               icon={<StarIcon color="secondary" sx={{ fontSize: 40 }} />}
             />
           </Grid>
-          {/* Add more cards for other stats as needed */}
+          <Grid item xs={12} sm={6} md={4}>
+            <StatCard
+              title={t('dashboard.activeContributors')}
+              value={stats.active_contributors || 0}
+              icon={<PeopleIcon color="success" sx={{ fontSize: 40 }} />}
+            />
+          </Grid>
         </Grid>
       )}
     </Box>

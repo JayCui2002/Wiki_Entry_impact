@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import { useApi } from '../contexts/ApiContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const WikiAnalysis: React.FC = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { fetchData } = useApi(); // We will use this later
+  const { fetchData } = useApi();
+  const { t } = useLanguage();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -20,9 +22,9 @@ const WikiAnalysis: React.FC = () => {
         method: 'POST',
         body: { page_url: url },
       });
-      setSuccess(result.message || 'Analysis has been successfully queued.');
+      setSuccess(result.message || t('wikiAnalysis.successMessage'));
     } catch (err) {
-      setError('Failed to start analysis. Please check the URL and try again.');
+      setError(t('wikiAnalysis.errorMessage'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -32,10 +34,10 @@ const WikiAnalysis: React.FC = () => {
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Analyze Wikipedia Page
+        {t('wikiAnalysis.title')}
       </Typography>
       <Typography paragraph color="text.secondary">
-        Enter the full URL of a Wikipedia page to fetch its history, analyze its contributors, and calculate their impact scores.
+        {t('wikiAnalysis.description')}
       </Typography>
       <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
         <TextField
@@ -43,13 +45,14 @@ const WikiAnalysis: React.FC = () => {
           required
           fullWidth
           id="wiki-url"
-          label="Wikipedia Page URL"
+          label={t('wikiAnalysis.urlLabel')}
           name="url"
           autoComplete="url"
           autoFocus
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           disabled={loading}
+          placeholder={t('wikiAnalysis.urlPlaceholder')}
         />
         <Button
           type="submit"
@@ -58,7 +61,7 @@ const WikiAnalysis: React.FC = () => {
           sx={{ mt: 3, mb: 2 }}
           disabled={loading || !url}
         >
-          {loading ? <CircularProgress size={24} /> : 'Start Analysis'}
+          {loading ? <CircularProgress size={24} /> : t('wikiAnalysis.startButton')}
         </Button>
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}

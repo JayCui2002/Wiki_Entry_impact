@@ -30,7 +30,7 @@ def main():
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8080,
         reload=True,
         reload_dirs=[backend_dir],
         log_config=None, # We use structlog inside the app

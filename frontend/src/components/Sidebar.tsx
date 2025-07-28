@@ -1,22 +1,25 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Drawer, List, ListItem, ListItemButton, ListItemText, Toolbar, Divider } from '@mui/material';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const drawerWidth = 240;
 
 const Sidebar: React.FC = () => {
+  const { t } = useLanguage();
+  
   const navItems = [
-    { text: 'Dashboard', path: '/' },
-    { text: 'Wiki Analysis', path: '/wiki-analysis' },
-    { text: 'Analysis History', path: '/analysis-history' },
+    { text: t('nav.dashboard'), path: '/' },
+    { text: t('nav.wikiAnalysis'), path: '/wiki-analysis' },
+    { text: t('nav.analysisHistory'), path: '/analysis-history' },
   ];
 
   const secondaryNavItems = [
-    { text: 'Contributors', path: '/contributors' },
-    { text: 'Analytics', path: '/analytics' },
-    { text: 'Comparison', path: '/comparison' },
-    { text: 'Settings', path: '/settings' },
-  ]
+    { text: t('nav.contributors'), path: '/contributors' },
+    { text: t('nav.analytics'), path: '/analytics' },
+    { text: t('nav.comparison'), path: '/comparison' },
+    { text: t('nav.settings'), path: '/settings' },
+  ];
 
   return (
     <Drawer

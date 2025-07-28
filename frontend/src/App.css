@@ -1,0 +1,309 @@
+/* 全局主题过渡效果 - 只保留颜色相关过渡 */
+* {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 优化渲染性能，减少重绘 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 根元素过渡效果 */
+html {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 文字颜色特殊优化 */
+h1, h2, h3, h4, h5, h6, p, span, div, label {
+  transition: 
+    color 0.25s ease-out,
+    background-color 0.25s ease-out !important;
+}
+
+/* Typography 组件特殊处理 */
+.MuiTypography-root {
+  transition: 
+    color 0.25s ease-out,
+    background-color 0.25s ease-out !important;
+}
+
+/* 输入框文字 */
+.MuiInputBase-input {
+  transition: 
+    color 0.25s ease-out,
+    background-color 0.25s ease-out !important;
+}
+
+/* 表格文字 */
+.MuiTableCell-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s ease-out,
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 列表项文字 */
+.MuiListItemText-root {
+  transition: 
+    color 0.25s ease-out !important;
+}
+
+.MuiListItemText-primary {
+  transition: 
+    color 0.25s ease-out !important;
+}
+
+.MuiListItemText-secondary {
+  transition: 
+    color 0.25s ease-out !important;
+}
+
+/* Material-UI 组件特定过渡效果 */
+.MuiPaper-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiAppBar-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 确保AppBar位置稳定 */
+  position: fixed !important;
+}
+
+.MuiDrawer-paper {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 确保宽度和位置稳定 */
+  width: 240px !important;
+  flex-shrink: 0 !important;
+}
+
+.MuiListItem-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 按钮 - 移除所有transform动画 */
+.MuiButton-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 卡片 - 移除悬停变换效果 */
+.MuiCard-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 表格头部过渡效果 */
+.MuiTableHead-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 输入框过渡效果 */
+.MuiOutlinedInput-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiInputLabel-root {
+  transition: 
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 主题切换动画 - 非常温和的透明度变化 */
+.theme-transition {
+  animation: themeChange 0.15s ease-out;
+}
+
+@keyframes themeChange {
+  0% {
+    opacity: 0.99;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 图标 - 只保留颜色过渡，移除transform */
+.MuiSvgIcon-root {
+  transition: 
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 工具提示过渡效果 */
+.MuiTooltip-tooltip {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* IconButton - 完全移除所有transform动画 */
+.MuiIconButton-root {
+  transition: 
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 菜单过渡效果 */
+.MuiMenu-paper {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiMenuItem-root {
+  transition: 
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* DataGrid 过渡效果 */
+.MuiDataGrid-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiDataGrid-row {
+  transition: 
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Switch 组件过渡效果 */
+.MuiSwitch-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Switch 内部组件稳定性 */
+.MuiSwitch-switchBase {
+  transition: 
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiSwitch-track {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiSwitch-thumb {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* FormControlLabel 稳定性 */
+.MuiFormControlLabel-root {
+  transition: 
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ListItem 组件稳定性 */
+.MuiListItem-root {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiListItemSecondaryAction-root {
+  transition: 
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 保持正常的定位行为 */
+}
+
+/* 确保主要布局组件不受过渡影响 */
+.MuiDrawer-root {
+  /* 只允许背景色过渡，避免尺寸变化 */
+  transition: none !important;
+}
+
+/* Box 组件稳定性 */
+.MuiBox-root {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 主内容区域稳定性 */
+main {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 确保主内容区域不会缩放 */
+  transform: none !important;
+}
+
+/* 防止布局闪烁的特殊规则 */
+.theme-transition * {
+  /* 只在主题切换期间禁用可能影响布局的动画 */
+  animation: none !important;
+  scale: none !important;
+  /* 强制硬件加速，减少重绘 */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* 优化文字渲染 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.theme-transition .MuiDrawer-root,
+.theme-transition .MuiDrawer-paper {
+  /* 确保侧边栏在切换期间完全稳定 */
+  width: 240px !important;
+  flex-shrink: 0 !important;
+  transform: none !important;
+  animation: none !important;
+  scale: none !important;
+}
+
+.theme-transition .MuiIconButton-root,
+.theme-transition .MuiButton-root,
+.theme-transition .MuiCard-root {
+  /* 确保按钮和卡片在切换期间位置稳定 */
+  transform: none !important;
+  animation: none !important;
+  scale: none !important;
+}
+
+/* Switch组件在主题切换期间的特殊处理 */
+.theme-transition .MuiSwitch-root,
+.theme-transition .MuiSwitch-switchBase,
+.theme-transition .MuiSwitch-track,
+.theme-transition .MuiSwitch-thumb {
+  /* 保持Switch正常功能，只禁用可能的动画冲突 */
+  animation: none !important;
+  scale: none !important;
+}
+
+/* 文字元素在主题切换期间的特殊处理 */
+.theme-transition .MuiTypography-root,
+.theme-transition .MuiListItemText-root,
+.theme-transition .MuiListItemText-primary,
+.theme-transition .MuiListItemText-secondary,
+.theme-transition .MuiTableCell-root,
+.theme-transition h1,
+.theme-transition h2,
+.theme-transition h3,
+.theme-transition h4,
+.theme-transition h5,
+.theme-transition h6,
+.theme-transition p,
+.theme-transition span,
+.theme-transition label {
+  /* 在主题切换期间使用更快的颜色过渡 */
+  transition: color 0.1s linear !important;
+}

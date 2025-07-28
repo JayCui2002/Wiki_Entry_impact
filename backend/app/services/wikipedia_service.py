@@ -1,122 +1,190 @@
+"""
+Wikipedia Service for fetching and analyzing Wikipedia page data
+Wikipedia服务，用于获取和分析Wikipedia页面数据
+"""
+
 import httpx
 import asyncio
 import structlog
-from typing import Optional, Dict, Any, List, Tuple
-from urllib.parse import urlparse, unquote
+from typing import Dict, List, Optional, Any
+from urllib.parse import urlparse, parse_qs, unquote
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from dateutil.parser import isoparse
 
-from app.core.config import settings
-from app.models.contributor import Contributor
 from app.models.analysis_session import AnalysisSession
+from app.models.contributor import Contributor
 from app.services.impact_calculator import ImpactCalculator, EditAnalysis
 
 logger = structlog.get_logger()
 
+
 class WikipediaService:
-    def __init__(self, db_session: AsyncSession):
+    """
+    Service for Wikipedia API interactions and analysis session management
+    Wikipedia API交互和分析会话管理服务
+    """
+    
+    def __init__(self, db_session: AsyncSession, impact_calculator: ImpactCalculator):
         self.db_session = db_session
+        self.impact_calculator = impact_calculator
         self.http_client = httpx.AsyncClient(
-            base_url=settings.WIKIPEDIA_API_URL,
             timeout=30.0,
-            headers={"User-Agent": f"WikiImpactAnalyzer/{settings.VERSION}"},
-            follow_redirects=True,
+            headers={'User-Agent': 'WikiImpactBot/1.0 (Educational Research Tool)'}
         )
-        self.impact_calculator = ImpactCalculator()
-
-    def _extract_title_and_lang_from_url(self, url: str) -> Optional[Tuple[str, str]]:
+        
+    def _extract_page_info(self, page_url: str) -> tuple[str, str]:
+        """
+        Extract title and language from Wikipedia URL
+        从Wikipedia URL中提取标题和语言
+        """
         try:
-            parsed_url = urlparse(url)
-            hostname_parts = parsed_url.netloc.split('.')
-            if len(hostname_parts) < 3 or "wikipedia.org" not in parsed_url.netloc:
-                return None
-            lang = hostname_parts[0]
-            path_parts = parsed_url.path.split('/')
-            if len(path_parts) > 2 and path_parts[1] == 'wiki':
-                title = unquote(path_parts[2]).replace('_', ' ')
-                return title, lang
-            return None
+            parsed = urlparse(page_url)
+            
+            # Extract language from subdomain (e.g., en.wikipedia.org)
+            domain_parts = parsed.netloc.split('.')
+            if len(domain_parts) >= 3 and domain_parts[1] == 'wikipedia':
+                lang = domain_parts[0]
+            else:
+                lang = 'en'  # Default to English
+            
+            # Extract title from path
+            path_parts = parsed.path.strip('/').split('/')
+            if len(path_parts) >= 2 and path_parts[0] == 'wiki':
+                title = unquote(path_parts[1]).replace('_', ' ')
+            else:
+                raise ValueError("Invalid Wikipedia URL format")
+                
+            return title, lang
+            
         except Exception as e:
-            logger.error("Failed to parse Wikipedia URL", url=url, error=e)
-            return None
+            logger.error(f"Error parsing Wikipedia URL {page_url}: {e}")
+            raise ValueError(f"Unable to parse Wikipedia URL: {page_url}")
 
-    async def _fetch_all_revisions(self, title: str) -> List[Dict[str, Any]]:
-        revisions = []
-        params = {
-            "action": "query", "format": "json", "prop": "revisions",
-            "titles": title, "rvprop": "ids|timestamp|user|userid|size|comment|tags|sizediff",
-            "rvlimit": "max",
-        }
-        logger.info("Fetching revisions for page", title=title)
+    async def _fetch_all_revisions(self, title: str, language: str = 'en') -> List[Dict[str, Any]]:
+        """
+        Fetch all revisions for a Wikipedia page
+        获取Wikipedia页面的所有修订版本
+        """
+        base_url = f"https://{language}.wikipedia.org/w/api.php"
+        all_revisions = []
+        rvcontinue = None
+        
         while True:
+            params = {
+                'action': 'query',
+                'format': 'json',
+                'prop': 'revisions',
+                'titles': title,
+                'rvlimit': 500,  # Maximum allowed
+                'rvprop': 'timestamp|user|userid|size|comment|flags|sha1',
+                'rvdir': 'newer'  # Oldest first
+            }
+            
+            if rvcontinue:
+                params['rvcontinue'] = rvcontinue
+                
             try:
-                response = await self.http_client.get("/", params=params)
+                response = await self.http_client.get(base_url, params=params)
                 response.raise_for_status()
                 data = response.json()
-                pages = data.get("query", {}).get("pages", {})
-                page_id = next(iter(pages))
-                if page_id == "-1":
-                    return []
-                page_revisions = pages[page_id].get("revisions", [])
-                revisions.extend(page_revisions)
-                if "continue" not in data:
+                
+                pages = data.get('query', {}).get('pages', {})
+                if not pages:
                     break
-                params["rvcontinue"] = data["continue"]["rvcontinue"]
+                    
+                page_data = next(iter(pages.values()))
+                if 'missing' in page_data:
+                    logger.warning(f"Page '{title}' not found")
+                    break
+                    
+                revisions = page_data.get('revisions', [])
+                all_revisions.extend(revisions)
+                
+                # Check for continuation
+                if 'continue' in data and 'rvcontinue' in data['continue']:
+                    rvcontinue = data['continue']['rvcontinue']
+                else:
+                    break
+                    
+                # Rate limiting
+                await asyncio.sleep(0.1)
+                
             except Exception as e:
-                logger.error("Error during revision fetching", error=str(e))
+                logger.error(f"Error fetching revisions for {title}: {e}")
                 break
-        logger.info("Fetched total revisions", count=len(revisions), title=title)
-        return revisions
+                
+        logger.info(f"Fetched {len(all_revisions)} revisions for '{title}'")
+        return all_revisions
+
+    async def _get_or_create_contributor(self, user_info: Dict[str, Any], language: str) -> Optional[Contributor]:
+        """
+        Get existing contributor or create new one
+        获取现有贡献者或创建新的贡献者
+        """
+        try:
+            from sqlalchemy import select
+            
+            user_id = user_info.get('userid')
+            username = user_info.get('user', 'Anonymous')
+            
+            if not user_id:
+                return None
+                
+            # Check if contributor already exists
+            result = await self.db_session.execute(
+                select(Contributor).where(Contributor.wikipedia_user_id == user_id)
+            )
+            contributor = result.scalar_one_or_none()
+            
+            if not contributor:
+                contributor = Contributor(
+                    wikipedia_user_id=user_id,
+                    wikipedia_username=username,
+                    display_name=username,
+                    primary_language=language,
+                    overall_impact_score=0.0,
+                    is_active=True
+                )
+                self.db_session.add(contributor)
+                await self.db_session.flush()  # Get the ID
+                
+            return contributor
+            
+        except Exception as e:
+            logger.error(f"Error getting/creating contributor {user_info}: {e}")
+            return None
 
     def _convert_to_edit_analysis(self, revision: Dict[str, Any]) -> EditAnalysis:
-        size_diff = revision.get("sizediff", 0)
+        """
+        Convert Wikipedia revision to EditAnalysis format
+        将Wikipedia修订版本转换为EditAnalysis格式
+        """
         return EditAnalysis(
-            edit_id=revision.get("revid", 0),
-            contributor_id=revision.get("userid", 0),
-            page_id=0,
-            timestamp=isoparse(revision.get("timestamp", "1970-01-01T00:00:00Z")),
-            size_change=size_diff,
-            is_new_page="new" in revision.get("tags", []),
-            is_revert="revert" in revision.get("tags", []),
-            is_minor="minor" in revision.get("tags", []),
-            comment=revision.get("comment", ""),
-            content_added=max(0, size_diff),
-            content_removed=max(0, -size_diff),
-            text_complexity_score=0.5,
-            semantic_significance=0.5,
+            timestamp=revision.get('timestamp', ''),
+            size_change=revision.get('size', 0),
+            comment=revision.get('comment', ''),
+            is_minor=revision.get('minor', False),
+            user_id=revision.get('userid'),
+            username=revision.get('user', 'Anonymous')
         )
 
-    async def _get_or_create_contributor(self, user_info: Dict[str, Any], lang: str) -> Optional[Contributor]:
-        username = user_info.get("user")
-        user_id = user_info.get("userid")
-        if not username or user_id == 0:
-            return None
-        result = await self.db_session.execute(select(Contributor).where(Contributor.wikipedia_user_id == user_id))
-        contributor = result.scalar_one_or_none()
-        if contributor:
-            return contributor
-        
-        new_contributor = Contributor(
-            wikipedia_user_id=user_id, wikipedia_username=username,
-            display_name=username, primary_language=lang,
-        )
-        self.db_session.add(new_contributor)
-        await self.db_session.commit()
-        await self.db_session.refresh(new_contributor)
-        logger.info("Created new contributor", username=username, id=new_contributor.id)
-        return new_contributor
-
-    async def analyze_page_by_url(self, page_url: str):
-        parse_result = self._extract_title_and_lang_from_url(page_url)
-        if not parse_result:
-            raise ValueError("Invalid Wikipedia URL")
-        title, lang = parse_result
-
+    async def analyze_wikipedia_page(self, page_url: str) -> int:
+        """
+        Main method to analyze a Wikipedia page
+        分析Wikipedia页面的主要方法
+        """
+        try:
+            title, lang = self._extract_page_info(page_url)
+            logger.info(f"Starting analysis for '{title}' in language '{lang}'")
+            
+        except ValueError as e:
+            logger.error(f"Invalid URL format: {e}")
+            raise
+            
         # Create analysis session
         analysis_session = AnalysisSession(
-            page_url=page_url,
             page_title=title,
+            page_url=page_url,
             page_language=lang,
             analysis_status="processing"
         )
@@ -125,7 +193,7 @@ class WikipediaService:
         await self.db_session.refresh(analysis_session)
 
         try:
-            revisions = await self._fetch_all_revisions(title)
+            revisions = await self._fetch_all_revisions(title, lang)
             if not revisions:
                 analysis_session.analysis_status = "completed"
                 analysis_session.total_revisions_analyzed = 0

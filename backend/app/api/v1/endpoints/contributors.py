@@ -375,4 +375,4 @@ async def compare_contributors(
         raise
     except Exception as e:
         logger.error(f"Error comparing contributors: {e}")
-        raise HTTPException(500, "Internal server error"
+        raise HTTPException(500, "Internal server error")

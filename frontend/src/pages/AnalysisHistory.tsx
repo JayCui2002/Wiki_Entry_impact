@@ -29,6 +29,7 @@ import {
   Delete as DeleteIcon 
 } from '@mui/icons-material';
 import { useApi } from '../contexts/ApiContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AnalysisSession {
   id: number;
@@ -60,6 +61,7 @@ const AnalysisHistory: React.FC = () => {
   const [contributorsLoading, setContributorsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { fetchData } = useApi();
+  const { t } = useLanguage();
 
   const loadSessions = async () => {
     try {
@@ -67,7 +69,7 @@ const AnalysisHistory: React.FC = () => {
       const data = await fetchData('/analysis-sessions/');
       setSessions(data);
     } catch (err) {
-      setError('Failed to load analysis history');
+      setError(t('analysisHistory.loadError'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -140,11 +142,11 @@ const AnalysisHistory: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <Box display="flex" alignItems="center" mb={3}>
           <TimelineIcon sx={{ mr: 2, fontSize: 32 }} />
-          <Typography variant="h4">Analysis History</Typography>
+          <Typography variant="h4">{t('analysisHistory.title')}</Typography>
         </Box>
         
         <Typography paragraph color="text.secondary">
-          View all your Wikipedia page analyses and explore the contributors found in each session.
+          {t('analysisHistory.description')}
         </Typography>
 
         {error && (
@@ -155,7 +157,7 @@ const AnalysisHistory: React.FC = () => {
 
         {sessions.length === 0 ? (
           <Alert severity="info">
-            No analysis sessions found. Start by analyzing a Wikipedia page!
+            {t('analysisHistory.noSessions')}
           </Alert>
         ) : (
           <Grid container spacing={3}>
@@ -178,15 +180,15 @@ const AnalysisHistory: React.FC = () => {
                     />
                     
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Contributors: {session.total_contributors_found}
+                      {t('analysisHistory.contributors')}: {session.total_contributors_found}
                     </Typography>
                     
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Revisions: {session.total_revisions_analyzed}
+                      {t('analysisHistory.revisions')}: {session.total_revisions_analyzed}
                     </Typography>
                     
                     <Typography variant="body2" color="text.secondary">
-                      Started: {new Date(session.started_at).toLocaleDateString()}
+                      {t('analysisHistory.started')}: {new Date(session.started_at).toLocaleDateString()}
                     </Typography>
                     
                     {session.error_message && (
