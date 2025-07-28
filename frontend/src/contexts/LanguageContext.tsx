@@ -7,7 +7,7 @@ export type Language = 'zh' | 'en';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 // 中文翻译
@@ -27,6 +27,8 @@ const zhTranslations = {
   'common.refresh': '刷新',
   'common.columns': '列',
   'common.density': '密度',
+  'common.clearCache': '清除缓存',
+  'common.exportData': '导出数据',
   
   // 导航菜单
   'nav.dashboard': '仪表板',
@@ -43,6 +45,22 @@ const zhTranslations = {
   'header.toggleDarkMode': '切换到深色模式',
   'header.toggleLightMode': '切换到浅色模式',
   'header.settings': '设置',
+  
+  // 通知系统
+  'notifications.title': '通知',
+  'notifications.empty': '暂无通知',
+  'notifications.markAllRead': '全部标记为已读',
+  'notifications.clearAll': '清除所有',
+  'notifications.new': '新',
+  'notifications.justNow': '刚刚',
+  'notifications.minutesAgo': '{minutes}分钟前',
+  'notifications.hoursAgo': '{hours}小时前',
+  'notifications.analysisComplete': '分析完成',
+  'notifications.analysisCompleteMessage': 'Wikipedia页面分析已完成，发现了 {contributorCount} 名贡献者',
+  'notifications.analysisStarted': '分析开始',
+  'notifications.analysisStartedMessage': 'Wikipedia页面分析已开始，请稍候...',
+  'notifications.analysisError': '分析失败',
+  'notifications.analysisErrorMessage': '分析过程中遇到错误，请重试',
   
   // 设置页面
   'settings.title': '设置',
@@ -64,6 +82,7 @@ const zhTranslations = {
   'settings.dataExportDesc': '导出分析数据和贡献者信息',
   'settings.version': 'Wiki Entry Impact Assessment System v1.0.0',
   'settings.copyright': '© 2024 开发团队. 保留所有权利.',
+  'settings.dataExportInProgress': '数据导出功能开发中...',
   
   // 语言选项
   'language.chinese': '简体中文',
@@ -148,6 +167,8 @@ const enTranslations = {
   'common.refresh': 'Refresh',
   'common.columns': 'Columns',
   'common.density': 'Density',
+  'common.clearCache': 'Clear Cache',
+  'common.exportData': 'Export Data',
   
   // Navigation
   'nav.dashboard': 'Dashboard',
@@ -164,6 +185,22 @@ const enTranslations = {
   'header.toggleDarkMode': 'Switch to Dark Mode',
   'header.toggleLightMode': 'Switch to Light Mode',
   'header.settings': 'Settings',
+  
+  // Notifications
+  'notifications.title': 'Notifications',
+  'notifications.empty': 'No notifications',
+  'notifications.markAllRead': 'Mark all as read',
+  'notifications.clearAll': 'Clear all',
+  'notifications.new': 'New',
+  'notifications.justNow': 'Just now',
+  'notifications.minutesAgo': '{minutes} minutes ago',
+  'notifications.hoursAgo': '{hours} hours ago',
+  'notifications.analysisComplete': 'Analysis Complete',
+  'notifications.analysisCompleteMessage': 'Wikipedia page analysis completed, found {contributorCount} contributors',
+  'notifications.analysisStarted': 'Analysis Started',
+  'notifications.analysisStartedMessage': 'Wikipedia page analysis has started, please wait...',
+  'notifications.analysisError': 'Analysis Failed',
+  'notifications.analysisErrorMessage': 'An error occurred during analysis, please try again',
   
   // Settings
   'settings.title': 'Settings',
@@ -185,6 +222,7 @@ const enTranslations = {
   'settings.dataExportDesc': 'Export analysis data and contributor information',
   'settings.version': 'Wiki Entry Impact Assessment System v1.0.0',
   'settings.copyright': '© 2024 Development Team. All rights reserved.',
+  'settings.dataExportInProgress': 'Data export feature is under development...',
   
   // Language options
   'language.chinese': '简体中文',
@@ -279,9 +317,18 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setLanguageState(lang);
   };
 
-  // 翻译函数
-  const t = (key: string): string => {
-    return (translations[language] as Record<string, string>)[key] || key;
+  // 翻译函数，支持参数替换
+  const t = (key: string, params?: Record<string, any>): string => {
+    let translation = (translations[language] as Record<string, string>)[key] || key;
+    
+    // 参数替换
+    if (params) {
+      Object.keys(params).forEach(param => {
+        translation = translation.replace(`{${param}}`, String(params[param]));
+      });
+    }
+    
+    return translation;
   };
 
   return (

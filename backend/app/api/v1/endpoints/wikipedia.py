@@ -5,6 +5,7 @@ import structlog
 
 from app.core.database import get_db
 from app.services.wikipedia_service import WikipediaService
+from app.services.impact_calculator import ImpactCalculator
 
 router = APIRouter()
 logger = structlog.get_logger()
@@ -14,9 +15,10 @@ class AnalysisRequest(BaseModel):
 
 async def run_analysis(page_url: str, db_session: AsyncSession):
     """Helper function to run the service and close its resources."""
-    service = WikipediaService(db_session)
+    impact_calculator = ImpactCalculator()
+    service = WikipediaService(db_session, impact_calculator)
     try:
-        await service.analyze_page_by_url(page_url)
+        await service.analyze_wikipedia_page(page_url)
     except Exception as e:
         logger.error("Analysis task failed", error=e, url=page_url)
     finally:

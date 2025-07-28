@@ -1,190 +1,172 @@
-import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Card, 
-  CardContent, 
-  FormControlLabel, 
-  Switch, 
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Switch,
+  FormControlLabel,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
+  Button,
   Select,
   MenuItem,
-  FormControl
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import { 
-  Brightness6 as DarkModeIcon,
-  Language as LanguageIcon,
-  Notifications as NotificationIcon,
-  Storage as StorageIcon 
-} from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 
 const Settings: React.FC = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const [analysisNotifications, setAnalysisNotifications] = useState(true);
+  const [systemNotifications, setSystemNotifications] = useState(true);
 
   const handleLanguageChange = (event: any) => {
     setLanguage(event.target.value as Language);
   };
 
+  const handleClearCache = () => {
+    // 清除缓存的逻辑
+    localStorage.clear();
+    window.location.reload();
+  };
+
+  const handleExportData = () => {
+    // 导出数据的逻辑
+    alert(t('settings.dataExportInProgress'));
+  };
+
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, color: 'text.primary' }}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
         {t('settings.title')}
       </Typography>
 
       {/* 外观设置 */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <DarkModeIcon sx={{ mr: 1 }} />
-            {t('settings.appearance')}
-          </Typography>
-          
-          <List>
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.darkMode')}
-                secondary={t('settings.darkModeDesc')}
-              />
-              <ListItemSecondaryAction>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={isDarkMode}
-                      onChange={toggleDarkMode}
-                      color="primary"
-                    />
-                  }
-                  label=""
-                />
-              </ListItemSecondaryAction>
-            </ListItem>
-          </List>
-        </CardContent>
-      </Card>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {t('settings.appearance')}
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isDarkMode}
+              onChange={toggleDarkMode}
+            />
+          }
+          label={
+            <Box>
+              <Typography variant="body1">{t('settings.darkMode')}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('settings.darkModeDesc')}
+              </Typography>
+            </Box>
+          }
+        />
+      </Paper>
 
       {/* 语言设置 */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <LanguageIcon sx={{ mr: 1 }} />
-            {t('settings.language')}
-          </Typography>
-          
-          <List>
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.interfaceLanguage')}
-                secondary={
-                  language === 'zh' 
-                    ? t('settings.currentLanguage').replace('简体中文', t('language.chinese'))
-                    : t('settings.currentLanguage').replace('English', t('language.english'))
-                }
-              />
-              <ListItemSecondaryAction>
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <Select
-                    value={language}
-                    onChange={handleLanguageChange}
-                    displayEmpty
-                  >
-                    <MenuItem value="zh">{t('language.chinese')}</MenuItem>
-                    <MenuItem value="en">{t('language.english')}</MenuItem>
-                  </Select>
-                </FormControl>
-              </ListItemSecondaryAction>
-            </ListItem>
-          </List>
-        </CardContent>
-      </Card>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {t('settings.language')}
+        </Typography>
+        <FormControl fullWidth sx={{ maxWidth: 300 }}>
+          <InputLabel>{t('settings.interfaceLanguage')}</InputLabel>
+          <Select
+            value={language}
+            label={t('settings.interfaceLanguage')}
+            onChange={handleLanguageChange}
+          >
+            <MenuItem value="zh">{t('language.chinese')}</MenuItem>
+            <MenuItem value="en">{t('language.english')}</MenuItem>
+          </Select>
+        </FormControl>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          {language === 'zh' ? t('settings.currentLanguage') : 'Current: English'}
+        </Typography>
+      </Paper>
 
       {/* 通知设置 */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <NotificationIcon sx={{ mr: 1 }} />
-            {t('settings.notifications')}
-          </Typography>
-          
-          <List>
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.analysisNotification')}
-                secondary={t('settings.analysisNotificationDesc')}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {t('settings.notifications')}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={analysisNotifications}
+                onChange={(e) => setAnalysisNotifications(e.target.checked)}
               />
-              <ListItemSecondaryAction>
-                <Switch defaultChecked color="primary" />
-              </ListItemSecondaryAction>
-            </ListItem>
-            
-            <Divider />
-            
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.systemNotification')}
-                secondary={t('settings.systemNotificationDesc')}
+            }
+            label={
+              <Box>
+                <Typography variant="body1">{t('settings.analysisNotification')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('settings.analysisNotificationDesc')}
+                </Typography>
+              </Box>
+            }
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={systemNotifications}
+                onChange={(e) => setSystemNotifications(e.target.checked)}
               />
-              <ListItemSecondaryAction>
-                <Switch defaultChecked color="primary" />
-              </ListItemSecondaryAction>
-            </ListItem>
-          </List>
-        </CardContent>
-      </Card>
+            }
+            label={
+              <Box>
+                <Typography variant="body1">{t('settings.systemNotification')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('settings.systemNotificationDesc')}
+                </Typography>
+              </Box>
+            }
+          />
+        </Box>
+      </Paper>
 
       {/* 数据设置 */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <StorageIcon sx={{ mr: 1 }} />
-            {t('settings.data')}
-          </Typography>
-          
-          <List>
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.cacheManagement')}
-                secondary={t('settings.cacheManagementDesc')}
-              />
-              <ListItemSecondaryAction>
-                <Typography variant="body2" color="text.secondary">
-                  约 15.2 MB
-                </Typography>
-              </ListItemSecondaryAction>
-            </ListItem>
-            
-            <Divider />
-            
-            <ListItem>
-              <ListItemText 
-                primary={t('settings.dataExport')}
-                secondary={t('settings.dataExportDesc')}
-              />
-              <ListItemSecondaryAction>
-                <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
-                  {t('common.export')}
-                </Typography>
-              </ListItemSecondaryAction>
-            </ListItem>
-          </List>
-        </CardContent>
-      </Card>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {t('settings.data')}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box>
+            <Typography variant="body1" gutterBottom>
+              {t('settings.cacheManagement')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              {t('settings.cacheManagementDesc')}
+            </Typography>
+            <Button variant="outlined" onClick={handleClearCache}>
+              {t('common.clearCache')}
+            </Button>
+          </Box>
+          <Divider />
+          <Box>
+            <Typography variant="body1" gutterBottom>
+              {t('settings.dataExport')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              {t('settings.dataExportDesc')}
+            </Typography>
+            <Button variant="outlined" onClick={handleExportData}>
+              {t('common.exportData')}
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* 版本信息 */}
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="body2" color="text.secondary" align="center">
           {t('settings.version')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+          <br />
           {t('settings.copyright')}
         </Typography>
-      </Box>
+      </Paper>
     </Box>
   );
 };

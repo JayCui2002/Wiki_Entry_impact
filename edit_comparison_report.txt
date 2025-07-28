@@ -1,0 +1,57 @@
+
+================================================================================
+EDIT DATA COMPARISON: RAW vs NORMALIZED
+================================================================================
+
+📄 RAW DATA SUMMARY
+----------------------------------------
+Total edits found: 4
+Total size changes: +1011 bytes
+Contributors: 4
+Time range: 2023-12-01 14:30:00 UTC to 2023-12-02 16:20:00 UTC
+
+📝 RAW EDITS LIST:
+----------------------------------------
+ 1. DataScientist_John | 2023-12-01 14:30:00 UTC | +342 bytes | Added section on neural networks
+ 2. WikiGardener_Alice | 2023-12-01 15:45:00 UTC |  -22 bytes | Fixed typos and grammar
+ 3. ResearcherBob | 2023-12-02 09:15:00 UTC | +727 bytes | Added references and citations
+ 4. StudentCarol | 2023-12-02 16:20:00 UTC |  -36 bytes | Removed duplicate sentence
+
+🔧 NORMALIZED DATA SUMMARY
+----------------------------------------
+Total edits processed: 4
+Total impact score: 21.4
+Average quality score: 0.88
+Edit type distribution: {'content_addition': 2, 'maintenance': 2}
+
+⚙️  NORMALIZED EDITS LIST:
+----------------------------------------
+ 1. ✓ DataScientist_John | 2023-12-01 14:30:00 UTC | +342 bytes | Impact: 7.2 | Type: content_addition
+ 2. ⭐ WikiGardener_Alice | 2023-12-01 15:45:00 UTC |  -22 bytes | Impact: 3.1 | Type: maintenance
+ 3. ⭐ ResearcherBob | 2023-12-02 09:15:00 UTC | +727 bytes | Impact: 8.7 | Type: content_addition
+ 4. ○ StudentCarol | 2023-12-02 16:20:00 UTC |  -36 bytes | Impact: 2.4 | Type: maintenance
+
+🔍 DETAILED COMPARISON
+--------------------------------------------------------------------------------
+Raw Data                            | Normalized Data                    
+----------------------------------- | -----------------------------------
+DataScientist_J +342b               | DataScientist_J +342b I:7.2        
+WikiGardener_Al  -22b               | WikiGardener_Al  -22b I:3.1        
+ResearcherBob   +727b               | ResearcherBob   +727b I:8.7        
+StudentCarol     -36b               | StudentCarol     -36b I:2.4        
+
+📊 STATISTICS COMPARISON
+--------------------------------------------------
+Size Changes:
+  Raw data    - Total: +1011, Avg: +252.8, Range: -36 to +727
+  Normalized  - Total: +1011, Avg: +252.8, Range: -36 to +727
+
+Time Range:
+  Raw data    - From: 2023-12-01 14:30:00 UTC
+              - To:   2023-12-02 16:20:00 UTC
+  Normalized  - From: 2023-12-01 14:30:00 UTC
+              - To:   2023-12-02 16:20:00 UTC
+
+Quality Metrics (Normalized only):
+  Quality scores - Avg: 0.88, Range: 0.78 to 0.95
+  Impact scores  - Avg: 5.3, Range: 2.4 to 8.7

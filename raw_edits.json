@@ -1,0 +1,70 @@
+{
+  "query": {
+    "pages": {
+      "12345": {
+        "pageid": 12345,
+        "title": "Machine Learning",
+        "revisions": [
+          {
+            "revid": 987654321,
+            "parentid": 987654320,
+            "user": "DataScientist_John",
+            "userid": 12345,
+            "timestamp": "2023-12-01T14:30:00Z",
+            "size": 15420,
+            "sizediff": 342,
+            "comment": "Added section on neural networks",
+            "contentformat": "text/x-wiki",
+            "contentmodel": "wikitext",
+            "tags": [
+              "mobile web edit"
+            ]
+          },
+          {
+            "revid": 987654322,
+            "parentid": 987654321,
+            "user": "WikiGardener_Alice",
+            "userid": 12346,
+            "timestamp": "2023-12-01T15:45:00Z",
+            "size": 15398,
+            "sizediff": -22,
+            "comment": "Fixed typos and grammar",
+            "contentformat": "text/x-wiki",
+            "contentmodel": "wikitext",
+            "tags": [
+              "minor edit"
+            ]
+          },
+          {
+            "revid": 987654323,
+            "parentid": 987654322,
+            "user": "ResearcherBob",
+            "userid": 12347,
+            "timestamp": "2023-12-02T09:15:00Z",
+            "size": 16125,
+            "sizediff": 727,
+            "comment": "Added references and citations",
+            "contentformat": "text/x-wiki",
+            "contentmodel": "wikitext",
+            "tags": []
+          },
+          {
+            "revid": 987654324,
+            "parentid": 987654323,
+            "user": "StudentCarol",
+            "userid": 12348,
+            "timestamp": "2023-12-02T16:20:00Z",
+            "size": 16089,
+            "sizediff": -36,
+            "comment": "Removed duplicate sentence",
+            "contentformat": "text/x-wiki",
+            "contentmodel": "wikitext",
+            "tags": [
+              "newcomer task"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

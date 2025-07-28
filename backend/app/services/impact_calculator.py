@@ -7,6 +7,7 @@ on wiki entry formation, including differentiation between additive and
 maintenance contributions.
 """
 
+import asyncio
 import math
 import numpy as np
 from typing import Dict, List, Optional, Tuple

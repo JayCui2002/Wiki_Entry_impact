@@ -1,0 +1,98 @@
+{
+  "page_id": 12345,
+  "page_title": "Machine Learning",
+  "total_edits": 4,
+  "edit_summary": {
+    "total_size_changes": 1011,
+    "net_size_change": 1011,
+    "average_edit_size": 252.75,
+    "additive_edits": 2,
+    "maintenance_edits": 2
+  },
+  "contributors": {
+    "DataScientist_John": {
+      "userid": 12345,
+      "edits_count": 1,
+      "total_size_added": 342,
+      "contribution_type": "additive"
+    },
+    "WikiGardener_Alice": {
+      "userid": 12346,
+      "edits_count": 1,
+      "total_size_added": -22,
+      "contribution_type": "maintenance"
+    },
+    "ResearcherBob": {
+      "userid": 12347,
+      "edits_count": 1,
+      "total_size_added": 727,
+      "contribution_type": "additive"
+    },
+    "StudentCarol": {
+      "userid": 12348,
+      "edits_count": 1,
+      "total_size_added": -36,
+      "contribution_type": "maintenance"
+    }
+  },
+  "edits": [
+    {
+      "edit_id": "edit_001",
+      "revid": 987654321,
+      "contributor": "DataScientist_John",
+      "contributor_id": 12345,
+      "timestamp": "2023-12-01T14:30:00Z",
+      "timestamp_unix": 1701439800,
+      "size_change": 342,
+      "edit_type": "content_addition",
+      "edit_category": "major_addition",
+      "quality_score": 0.85,
+      "impact_score": 7.2
+    },
+    {
+      "edit_id": "edit_002",
+      "revid": 987654322,
+      "contributor": "WikiGardener_Alice",
+      "contributor_id": 12346,
+      "timestamp": "2023-12-01T15:45:00Z",
+      "timestamp_unix": 1701444300,
+      "size_change": -22,
+      "edit_type": "maintenance",
+      "edit_category": "correction",
+      "quality_score": 0.95,
+      "impact_score": 3.1
+    },
+    {
+      "edit_id": "edit_003",
+      "revid": 987654323,
+      "contributor": "ResearcherBob",
+      "contributor_id": 12347,
+      "timestamp": "2023-12-02T09:15:00Z",
+      "timestamp_unix": 1701507300,
+      "size_change": 727,
+      "edit_type": "content_addition",
+      "edit_category": "major_addition",
+      "quality_score": 0.92,
+      "impact_score": 8.7
+    },
+    {
+      "edit_id": "edit_004",
+      "revid": 987654324,
+      "contributor": "StudentCarol",
+      "contributor_id": 12348,
+      "timestamp": "2023-12-02T16:20:00Z",
+      "timestamp_unix": 1701532800,
+      "size_change": -36,
+      "edit_type": "maintenance",
+      "edit_category": "cleanup",
+      "quality_score": 0.78,
+      "impact_score": 2.4
+    }
+  ],
+  "processing_metadata": {
+    "normalization_date": "2023-12-08T10:30:00Z",
+    "algorithm_version": "1.2.0",
+    "quality_threshold": 0.7,
+    "impact_calculation_method": "weighted_contribution"
+  }
+}

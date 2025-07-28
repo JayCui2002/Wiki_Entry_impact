@@ -159,13 +159,37 @@ class WikipediaService:
         Convert Wikipedia revision to EditAnalysis format
         将Wikipedia修订版本转换为EditAnalysis格式
         """
+        from datetime import datetime
+        
+        # Parse timestamp
+        timestamp_str = revision.get('timestamp', '')
+        if timestamp_str:
+            try:
+                timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            except ValueError:
+                timestamp = datetime.now()
+        else:
+            timestamp = datetime.now()
+        
+        # Calculate content changes
+        size_change = revision.get('size', 0)
+        content_added = max(0, size_change)  # Positive changes are additions
+        content_removed = max(0, -size_change)  # Negative changes are removals (as positive)
+        
         return EditAnalysis(
-            timestamp=revision.get('timestamp', ''),
-            size_change=revision.get('size', 0),
-            comment=revision.get('comment', ''),
+            edit_id=revision.get('revid', 0),
+            contributor_id=revision.get('userid', 0),
+            page_id=revision.get('pageid', 0),
+            timestamp=timestamp,
+            size_change=size_change,
+            is_new_page=revision.get('parentid') is None,  # No parent = new page
+            is_revert=False,  # TODO: Implement revert detection
             is_minor=revision.get('minor', False),
-            user_id=revision.get('userid'),
-            username=revision.get('user', 'Anonymous')
+            comment=revision.get('comment', ''),
+            content_added=content_added,
+            content_removed=content_removed,
+            text_complexity_score=0.5,  # Default score, TODO: Calculate actual complexity
+            semantic_significance=0.5   # Default score, TODO: Calculate actual significance
         )
 
     async def analyze_wikipedia_page(self, page_url: str) -> int:
@@ -214,6 +238,39 @@ class WikipediaService:
                     continue
 
                 converted_revs = [self._convert_to_edit_analysis(rev) for rev in user_revs]
+                
+                # 更新基本统计字段
+                contributor.total_edits = len(user_revs)
+                contributor.total_pages_edited = len({rev.get('pageid') for rev in user_revs if rev.get('pageid')})
+                
+                # 计算字节统计
+                total_bytes_added = sum(max(0, rev.get('size', 0)) for rev in user_revs if rev.get('size', 0) > 0)
+                total_bytes_removed = sum(abs(min(0, rev.get('size', 0))) for rev in user_revs if rev.get('size', 0) < 0)
+                net_bytes = sum(rev.get('size', 0) for rev in user_revs)
+                
+                contributor.total_bytes_added = total_bytes_added
+                contributor.total_bytes_removed = total_bytes_removed  
+                contributor.net_bytes_contribution = net_bytes
+                
+                # 更新时间戳
+                timestamps = [rev.get('timestamp') for rev in user_revs if rev.get('timestamp')]
+                if timestamps:
+                    from datetime import datetime
+                    parsed_timestamps = []
+                    for ts in timestamps:
+                        try:
+                            if ts and isinstance(ts, str):
+                                parsed_ts = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                                parsed_timestamps.append(parsed_ts)
+                        except (ValueError, AttributeError):
+                            continue
+                    
+                    if parsed_timestamps:
+                        parsed_timestamps.sort()
+                        contributor.first_edit_date = parsed_timestamps[0]
+                        contributor.last_edit_date = parsed_timestamps[-1]
+                
+                # 计算影响分数
                 metrics = await self.impact_calculator.calculate_comprehensive_impact(
                     contributor, converted_revs, {}
                 )
@@ -224,6 +281,14 @@ class WikipediaService:
                 contributor.discussion_impact_score = metrics.discussion_impact_score
                 contributor.quality_score = metrics.quality_score
                 contributor.analysis_session_id = analysis_session.id
+                
+                # 更新贡献者分类
+                from app.services.impact_calculator import ImpactCalculator
+                calculator = ImpactCalculator()
+                contributor_type = calculator.classify_contributor_type(metrics)
+                # 注意：这里假设 Contributor 模型有 contributor_type 字段，如果没有可以添加或忽略
+                # contributor.contributor_type = contributor_type
+                
                 self.db_session.add(contributor)
 
             analysis_session.analysis_status = "completed"

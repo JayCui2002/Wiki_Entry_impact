@@ -7,7 +7,8 @@ import {
   Box,
   Tooltip,
   Menu,
-  MenuItem
+  MenuItem,
+  Badge
 } from '@mui/material';
 import { 
   Brightness6 as DarkModeIcon,
@@ -18,15 +19,19 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, Language } from '../contexts/LanguageContext';
+import { useNotification } from '../contexts/NotificationContext';
+import NotificationPanel from './NotificationPanel';
 
 const drawerWidth = 240;
 
 const Header: React.FC = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { unreadCount } = useNotification();
   const navigate = useNavigate();
   
   const [languageAnchorEl, setLanguageAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [notificationAnchorEl, setNotificationAnchorEl] = React.useState<null | HTMLElement>(null);
   const [isThemeToggling, setIsThemeToggling] = React.useState(false);
 
   const handleLanguageMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -35,6 +40,14 @@ const Header: React.FC = () => {
 
   const handleLanguageMenuClose = () => {
     setLanguageAnchorEl(null);
+  };
+
+  const handleNotificationMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setNotificationAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationMenuClose = () => {
+    setNotificationAnchorEl(null);
   };
 
   const handleLanguageChange = (newLanguage: Language) => {
@@ -68,8 +81,14 @@ const Header: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {/* 通知按钮 */}
           <Tooltip title={t('header.notifications')}>
-            <IconButton color="inherit" sx={{ mr: 1 }}>
-              <NotificationsIcon />
+            <IconButton 
+              color="inherit" 
+              sx={{ mr: 1 }}
+              onClick={handleNotificationMenuOpen}
+            >
+              <Badge badgeContent={unreadCount} color="error" max={99}>
+                <NotificationsIcon />
+              </Badge>
             </IconButton>
           </Tooltip>
           
@@ -139,6 +158,13 @@ const Header: React.FC = () => {
             {t('language.english')}
           </MenuItem>
         </Menu>
+
+        {/* 通知面板 */}
+        <NotificationPanel
+          anchorEl={notificationAnchorEl}
+          open={Boolean(notificationAnchorEl)}
+          onClose={handleNotificationMenuClose}
+        />
       </Toolbar>
     </AppBar>
   );

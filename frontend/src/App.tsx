@@ -14,6 +14,7 @@ import AnalysisHistory from './pages/AnalysisHistory';
 import { ApiProvider } from './contexts/ApiContext';
 import { CustomThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css'; // 导入全局过渡样式
 
 const App: React.FC = () => {
@@ -21,30 +22,32 @@ const App: React.FC = () => {
     <LanguageProvider>
       <CustomThemeProvider>
         <CssBaseline />
-        <ApiProvider>
-          <Router>
-            <Box sx={{ display: 'flex' }}>
-              <Header />
-              <Sidebar />
-              <Box
-                component="main"
-                sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
-              >
-                <Toolbar />
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/contributors" element={<Contributors />} />
-                  <Route path="/contributors/:id" element={<ContributorDetail />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/comparison" element={<Comparison />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/wiki-analysis" element={<WikiAnalysis />} />
-                  <Route path="/analysis-history" element={<AnalysisHistory />} />
-                </Routes>
+        <NotificationProvider>
+          <ApiProvider>
+            <Router>
+              <Box sx={{ display: 'flex' }}>
+                <Header />
+                <Sidebar />
+                <Box
+                  component="main"
+                  sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
+                >
+                  <Toolbar />
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/contributors" element={<Contributors />} />
+                    <Route path="/contributors/:id" element={<ContributorDetail />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/comparison" element={<Comparison />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/wiki-analysis" element={<WikiAnalysis />} />
+                    <Route path="/analysis-history" element={<AnalysisHistory />} />
+                  </Routes>
+                </Box>
               </Box>
-            </Box>
-          </Router>
-        </ApiProvider>
+            </Router>
+          </ApiProvider>
+        </NotificationProvider>
       </CustomThemeProvider>
     </LanguageProvider>
   );
