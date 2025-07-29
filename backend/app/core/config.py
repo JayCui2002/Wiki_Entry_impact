@@ -1,6 +1,8 @@
 """
 Configuration settings for Wiki Impact Assessment System
 维基影响评估系统的配置设置
+
+此模块包含应用程序的所有配置参数，包括数据库连接、Redis配置、安全设置等
 """
 
 import os
@@ -13,54 +15,57 @@ class Settings(BaseSettings):
     """
     应用程序设置，基于Pydantic的BaseSettings
     用于配置维基影响评估系统的各项参数
+    
+    所有设置都可以通过环境变量覆盖，变量名与字段名相同
     """
     
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
     
-    # Basic application settings
+    # 基础应用程序设置 / Basic application settings
     PROJECT_NAME: str = "Wiki Entry Impact Assessment"
     VERSION: str = "1.0.0"
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "development"  # development, staging, production
     DEBUG: bool = True
     
-    # Server configuration
+    # 服务器配置 / Server configuration
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
-    # Database settings
+    # 数据库设置 / Database settings
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_USER: str = "postgres"
-    DB_PASSWORD: str = "200211"
+    DB_PASSWORD: str = "200211"  # 生产环境中应通过环境变量设置
     DB_NAME: str = "wiki_impact"
     
-    # Redis settings
+    # Redis设置 / Redis settings
     REDIS_ENABLED: bool = True
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
     REDIS_PASSWORD: Optional[str] = None
     
-    # Security settings
-    SECRET_KEY: str = "your-secret-key-change-this-in-production"
+    # 安全设置 / Security settings
+    SECRET_KEY: str = "your-secret-key-change-this-in-production"  # 生产环境中必须更改
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # CORS settings
+    # CORS设置 / CORS settings
+    # 开发环境允许所有来源，生产环境应指定具体的前端URL
     # For development, we allow all origins.
     # For production, this should be a specific list of frontend URLs.
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
     
-    # Rate limiting
-    RATE_LIMIT_REQUESTS: int = 100
-    RATE_LIMIT_WINDOW: int = 900  # 15 minutes
+    # 速率限制 / Rate limiting
+    RATE_LIMIT_REQUESTS: int = 100  # 每个时间窗口的请求数
+    RATE_LIMIT_WINDOW: int = 900  # 15分钟的时间窗口
     
-    # Wikipedia API settings
+    # 维基百科API设置 / Wikipedia API settings
     WIKIPEDIA_API_URL: str = "https://en.wikipedia.org/w/api.php"
-    WIKIPEDIA_RATE_LIMIT: int = 10  # requests per second
+    WIKIPEDIA_RATE_LIMIT: int = 10  # 每秒请求数
     
-    # Celery settings (for background tasks)
+    # Celery设置（后台任务） / Celery settings (for background tasks)
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None
     

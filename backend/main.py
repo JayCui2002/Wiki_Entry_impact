@@ -13,6 +13,7 @@ import structlog
 from contextlib import asynccontextmanager
 import time
 from sqlalchemy import text
+from datetime import datetime
 
 from app.core.config import settings
 from app.core.database import engine, Base
@@ -21,13 +22,13 @@ from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security import SecurityMiddleware
 from app.middleware.logging import LoggingMiddleware
 
-# Import routers
+# 导入路由器 / Import routers
 from app.api.v1.api import api_router
 
-# Configure structured logging
+# 配置结构化日志 / Configure structured logging
 logger = structlog.get_logger()
 
-# Security scheme
+# 安全认证方案 / Security scheme
 security = HTTPBearer()
 
 
@@ -36,18 +37,20 @@ async def lifespan(app: FastAPI):
     """
     Application lifespan management
     应用程序生命周期管理
+    
+    管理应用程序的启动和关闭过程，包括数据库连接、Redis连接等
     """
-    # Startup
+    # 启动 / Startup
     logger.info("Starting Wiki Impact Assessment System")
     
-    # Initialize Redis client
+    # 初始化Redis客户端 / Initialize Redis client
     await redis_client.initialize()
 
-    # Create database tables
+    # 创建数据库表 / Create database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # Test Redis connection
+    # 测试Redis连接 / Test Redis connection
     if redis_client.is_connected:
         logger.info("Redis connection test successful")
     else:
@@ -56,23 +59,23 @@ async def lifespan(app: FastAPI):
     logger.info("Application startup complete")
     yield
     
-    # Shutdown
+    # 关闭 / Shutdown
     logger.info("Shutting down Wiki Impact Assessment System")
     await redis_client.close()
 
 
-# Create FastAPI application
+# 创建FastAPI应用程序 / Create FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="API for Wiki Entry Impact Assessment",
+    description="API for Wiki Entry Impact Assessment / 维基条目影响评估API",
     version="1.0.0",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT == "development" else None,
     lifespan=lifespan
 )
 
-# Set up CORS middleware
-# This allows the frontend (running on a different port) to communicate with the backend.
+# 设置CORS中间件 / Set up CORS middleware
+# 这允许前端（运行在不同端口）与后端通信 / This allows the frontend (running on a different port) to communicate with the backend
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -82,12 +85,12 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-# Add middleware
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# 添加中间件 / Add middleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # Gzip压缩中间件
 if settings.REDIS_ENABLED:
-    app.add_middleware(RateLimitMiddleware)
-# app.add_middleware(SecurityMiddleware) # Temporarily disabled for debugging CORS issues
-app.add_middleware(LoggingMiddleware)
+    app.add_middleware(RateLimitMiddleware)  # 速率限制中间件
+# app.add_middleware(SecurityMiddleware) # 暂时禁用以调试CORS问题
+app.add_middleware(LoggingMiddleware)  # 日志记录中间件
 
 
 @app.middleware("http")
@@ -95,6 +98,8 @@ async def add_process_time_header(request: Request, call_next):
     """
     Add response time header to all requests
     为所有请求添加响应时间头
+    
+    用于性能监控和调试
     """
     start_time = time.time()
     response = await call_next(request)
@@ -106,10 +111,12 @@ async def add_process_time_header(request: Request, call_next):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
-    Global exception handler for unhandled errors
+    Global exception handler
     全局异常处理器
+    
+    捕获所有未处理的异常并返回统一的错误响应
     """
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error("Unhandled exception", error=str(exc), exc_info=True)
     return JSONResponse(
         status_code=500,
         content={
@@ -125,56 +132,64 @@ async def root():
     """
     Root endpoint - API status
     根端点 - API状态
+    
+    返回API的基本状态信息
     """
     return {
         "message": "Wiki Entry Impact Assessment API",
         "version": "1.0.0",
-        "status": "operational",
-        "environment": settings.ENVIRONMENT
+        "status": "running",
+        "docs": "/docs" if settings.ENVIRONMENT == "development" else "disabled in production"
     }
 
 
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint for monitoring
+    Health check endpoint
     健康检查端点
+    
+    用于容器编排和负载均衡器的健康检查
     """
+    # 基本健康检查 / Basic health check
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "database": "unknown",
+        "redis": "unknown"
+    }
+    
     try:
-        # Test database connection
+        # 检查数据库连接 / Check database connection
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
-        
-        # Test Redis connection
-        await redis_client.ping()
-        
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "redis": "connected" if redis_client.is_connected else "disconnected",
-            "timestamp": time.time()
-        }
+        health_status["database"] = "connected"
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": time.time()
-            }
-        )
+        health_status["database"] = f"error: {str(e)}"
+        health_status["status"] = "unhealthy"
+    
+    # 检查Redis连接 / Check Redis connection
+    try:
+        if redis_client.is_connected:
+            health_status["redis"] = "connected"
+        else:
+            health_status["redis"] = "disconnected"
+    except Exception as e:
+        health_status["redis"] = f"error: {str(e)}"
+    
+    return health_status
 
 
-# Include API routers
+# 包含API路由 / Include API routers
 app.include_router(api_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":
+    # 直接运行的开发模式 / Development mode when run directly
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.ENVIRONMENT == "development",
-        log_config=None,  # Use structlog instead
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=True,
+        log_config=None
     ) 
